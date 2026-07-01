@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML to APK — Build Console</title>
+<style>
+  :root {
+    --bg: #f4f5fa;
+    --panel: #ffffff;
+    --border: #e3e5ee;
+    --text: #1f2333;
+    --muted: #6b7080;
+    --indigo: #4f3fd6;
+    --indigo-dark: #4332b8;
+    --indigo-soft: #eeebfb;
+    --red: #e0594a;
+    --amber: #e8a93b;
+    --green: #3aa66b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    background-image:
+      linear-gradient(rgba(0,0,0,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.015) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .window {
+    width: 100%;
+    max-width: 980px;
+    background: var(--panel);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(20,20,40,0.04), 0 12px 32px -8px rgba(20,20,40,0.10);
+    overflow: hidden;
+  }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    background: #fafafe;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.red { background: var(--red); }
+  .dot.amber { background: var(--amber); }
+  .dot.green { background: var(--green); }
+  .titlebar-label {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .body { padding: 34px 38px 38px; }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #383c4c;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .req { color: var(--red); }
+
+  .grid-top {
+    display: grid;
+    grid-template-columns: 1.55fr 0.7fr 1.55fr;
+    gap: 26px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .grid-top { grid-template-columns: 1fr; }
+  }
+
+  .dropzone {
+    border: 1.5px dashed #cfd2e0;
+    border-radius: var(--radius);
+    background: #fbfbfe;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    padding: 18px;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--indigo); background: var(--indigo-soft); }
+  .dropzone.filled { border-style: solid; border-color: #c9e4d4; background: #f3fbf6; }
+  .dz-icon { font-size: 30px; margin-bottom: 10px; line-height: 1; }
+  .dz-title { font-size: 14px; font-weight: 600; color: #2c3042; }
+  .dz-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .dz-filename { font-size: 13px; font-weight: 600; color: var(--green); word-break: break-all; padding: 0 6px; }
+
+  .icon-drop {
+    border: 1.5px dashed #cfd2e0;
+    border-radius: var(--radius);
+    background: #fbfbfe;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    overflow: hidden;
+  }
+  .icon-drop:hover, .icon-drop.drag { border-color: var(--indigo); background: var(--indigo-soft); }
+  .icon-drop img { width: 100%; height: 100%; object-fit: cover; }
+  .icon-placeholder { color: #b7bac8; font-size: 26px; }
+
+  .meta-col { display: flex; flex-direction: column; gap: 12px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  input[type=text], input[type=number] {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 13.5px;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input::placeholder { color: #aeb1c0; }
+  input:focus {
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px rgba(79,63,214,0.12);
+  }
+  input.invalid { border-color: var(--red); }
+
+  .orientation-block { margin-top: 26px; }
+  .radio-row { display: flex; gap: 26px; margin-top: 10px; }
+  .radio-opt {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13.5px; color: #383c4c; cursor: pointer;
+  }
+  .radio-opt input { accent-color: var(--indigo); width: 15px; height: 15px; cursor: pointer; }
+
+  .build-btn {
+    margin-top: 26px;
+    width: 100%;
+    background: var(--indigo);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 14px 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background .15s, transform .05s;
+  }
+  .build-btn:hover { background: var(--indigo-dark); }
+  .build-btn:active { transform: scale(0.997); }
+  .build-btn:disabled { background: #b8b4e8; cursor: not-allowed; }
+  .build-btn .play { font-size: 11px; }
+
+  .footnote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+
+  .error-banner {
+    margin-top: 16px;
+    background: #fdeeec;
+    border: 1px solid #f4c6bf;
+    color: #a4392b;
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 11px 14px;
+    display: none;
+  }
+
+  /* Progress / result panel */
+  .progress-panel {
+    margin-top: 8px;
+    border: 1.5px dashed #b9c6f5;
+    border-radius: var(--radius);
+    background: #f3f5ff;
+    padding: 40px 30px;
+    text-align: center;
+    display: none;
+  }
+  .spinner {
+    width: 38px; height: 38px;
+    border: 3px solid #d6dcf9;
+    border-top-color: var(--indigo);
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-title { font-size: 15.5px; font-weight: 700; color: #232646; }
+  .progress-stage { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 18px; }
+  .progress-bar-track {
+    height: 6px; background: #e1e5fb; border-radius: 4px;
+    margin: 18px auto 6px; max-width: 360px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--indigo); border-radius: 4px;
+    width: 0%; transition: width .4s ease;
+  }
+  .progress-pct { font-size: 11.5px; color: #8489a3; }
+
+  .result-icon { font-size: 34px; margin-bottom: 10px; }
+  .result-title { font-size: 16px; font-weight: 700; }
+  .result-sub { font-size: 13px; color: var(--muted); margin-top: 6px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+  .download-btn {
+    margin-top: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 12px 26px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .download-btn:hover { background: #2f8f5c; }
+  .reset-btn {
+    margin-top: 14px;
+    display: block;
+    margin-left: auto; margin-right: auto;
+    background: transparent;
+    border: none;
+    color: var(--indigo);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .log-toggle {
+    margin-top: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    display: inline-block;
+  }
+  .log-box {
+    display: none;
+    margin-top: 12px;
+    background: #1b1d28;
+    color: #cfd3e6;
+    text-align: left;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .hidden-input { display: none; }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <span class="dot red"></span>
+    <span class="dot amber"></span>
+    <span class="dot green"></span>
+    <span class="titlebar-label">BUILD CONSOLE — LOCAL V4.3</span>
+  </div>
+
+  <div class="body">
+
+    <form id="buildForm">
+      <div class="grid-top">
+        <!-- Source ZIP -->
+        <div>
+          <p class="section-label">1. SOURCE FILES <span class="req">*</span></p>
+          <div class="dropzone" id="zipDrop">
+            <div id="zipDropInner">
+              <div class="dz-icon">📦</div>
+              <div class="dz-title">Drop your app ZIP here</div>
+              <div class="dz-sub">Works with any HTML, CSS, and JS app</div>
+            </div>
+          </div>
+          <input type="file" id="zipInput" class="hidden-input" accept=".zip">
+        </div>
+
+        <!-- Icon -->
+        <div>
+          <p class="section-label">ICON <span class="req">*</span></p>
+          <div class="icon-drop" id="iconDrop">
+            <span class="icon-placeholder" id="iconPlaceholder">🖼️</span>
+          </div>
+          <input type="file" id="iconInput" class="hidden-input" accept=".png,.jpg,.jpeg,.webp">
+        </div>
+
+        <!-- Metadata -->
+        <div>
+          <p class="section-label">2. APP METADATA</p>
+          <div class="meta-col">
+            <input type="text" id="appName" placeholder="App Name">
+            <input type="text" id="packageId" placeholder="com.example.myapp" value="com.example.myapp">
+            <div class="field-row">
+              <input type="text" id="versionName" placeholder="1.0.0" value="1.0.0">
+              <input type="number" id="versionCode" placeholder="1" value="1" min="1">
+            </div>
+          </div>
+
+          <div class="orientation-block">
+            <p class="section-label" style="margin-bottom:0;">ORIENTATION</p>
+            <div class="radio-row">
+              <label class="radio-opt"><input type="radio" name="orientation" value="auto" checked> Auto</label>
+              <label class="radio-opt"><input type="radio" name="orientation" value="portrait"> Portrait</label>
+              <label class="radio-opt"><input type="radio" name="orientation" value="landscape"> Landscape</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="build-btn" id="buildBtn">
+        <span class="play">▶</span> Start Debug Build
+      </button>
+      <div class="footnote">Builds run locally using your installed Android SDK + JDK</div>
+      <div class="error-banner" id="errorBanner"></div>
+    </form>
+
+    <!-- Progress panel -->
+    <div class="progress-panel" id="progressPanel">
+      <div id="progressRunning">
+        <div class="spinner"></div>
+        <div class="progress-title">Building Your App</div>
+        <div class="progress-stage" id="stageText">Starting build…</div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+
+      <div id="progressDone" style="display:none;">
+        <div class="result-icon" id="resultIcon">✅</div>
+        <div class="result-title" id="resultTitle">Build complete</div>
+        <div class="result-sub" id="resultSub"></div>
+        <a class="download-btn" id="downloadBtn" href="#" style="display:none;">⬇ Download APK</a>
+        <button class="reset-btn" id="resetBtn">Start another build</button>
+      </div>
+
+      <div class="log-toggle" id="logToggle">View build log</div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const zipDrop = document.getElementById('zipDrop');
+  const zipInput = document.getElementById('zipInput');
+  const zipDropInner = document.getElementById('zipDropInner');
+  const iconDrop = document.getElementById('iconDrop');
+  const iconInput = document.getElementById('iconInput');
+
+  let selectedZip = null;
+  let selectedIcon = null;
+
+  function wireDropzone(zoneEl, inputEl, onFile) {
+    zoneEl.addEventListener('click', () => inputEl.click());
+    zoneEl.addEventListener('dragover', e => { e.preventDefault(); zoneEl.classList.add('drag'); });
+    zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('drag'));
+    zoneEl.addEventListener('drop', e => {
+      e.preventDefault();
+      zoneEl.classList.remove('drag');
+      if (e.dataTransfer.files.length) onFile(e.dataTransfer.files[0]);
+    });
+    inputEl.addEventListener('change', () => {
+      if (inputEl.files.length) onFile(inputEl.files[0]);
+    });
+  }
+
+  wireDropzone(zipDrop, zipInput, file => {
+    selectedZip = file;
+    zipDrop.classList.add('filled');
+    zipDropInner.innerHTML = `<div class="dz-icon">📦</div><div class="dz-filename">${file.name}</div>`;
+  });
+
+  wireDropzone(iconDrop, iconInput, file => {
+    selectedIcon = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      iconDrop.innerHTML = `<img src="${e.target.result}" alt="icon preview">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const form = document.getElementById('buildForm');
+  const buildBtn = document.getElementById('buildBtn');
+  const errorBanner = document.getElementById('errorBanner');
+  const progressPanel = document.getElementById('progressPanel');
+  const progressRunning = document.getElementById('progressRunning');
+  const progressDone = document.getElementById('progressDone');
+  const stageText = document.getElementById('stageText');
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  const resultIcon = document.getElementById('resultIcon');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultSub = document.getElementById('resultSub');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const logToggle = document.getElementById('logToggle');
+  const logBox = document.getElementById('logBox');
+
+  function showError(msg) {
+    errorBanner.textContent = msg;
+    errorBanner.style.display = 'block';
+  }
+  function clearError() {
+    errorBanner.style.display = 'none';
+  }
+
+  logToggle.addEventListener('click', () => {
+    logBox.style.display = logBox.style.display === 'block' ? 'none' : 'block';
+  });
+
+  resetBtn.addEventListener('click', () => {
+    progressPanel.style.display = 'none';
+    form.style.display = 'block';
+    progressRunning.style.display = 'block';
+    progressDone.style.display = 'none';
+    downloadBtn.style.display = 'none';
+    logBox.textContent = '';
+    logBox.style.display = 'none';
+    buildBtn.disabled = false;
+  });
+
+  let pollTimer = null;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError();
+
+    if (!selectedZip) { showError('Please drop or select your app ZIP file.'); return; }
+    if (!selectedIcon) { showError('Please provide an app icon.'); return; }
+
+    const appName = document.getElementById('appName').value.trim() || 'MyWebApp';
+    const packageId = document.getElementById('packageId').value.trim();
+    const versionName = document.getElementById('versionName').value.trim() || '1.0.0';
+    const versionCode = document.getElementById('versionCode').value.trim() || '1';
+    const orientation = document.querySelector('input[name=orientation]:checked').value;
+
+    if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(packageId)) {
+      showError('Package ID must look like com.example.myapp (lowercase, dot-separated).');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('project_zip', selectedZip);
+    fd.append('icon', selectedIcon);
+    fd.append('app_name', appName);
+    fd.append('package_id', packageId);
+    fd.append('version_name', versionName);
+    fd.append('version_code', versionCode);
+    fd.append('orientation', orientation);
+
+    buildBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/build', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || 'Could not start build.');
+        buildBtn.disabled = false;
+        return;
+      }
+      form.style.display = 'none';
+      progressPanel.style.display = 'block';
+      pollStatus(data.job_id);
+    } catch (err) {
+      showError('Network error: ' + err.message);
+      buildBtn.disabled = false;
+    }
+  });
+
+  function pollStatus(jobId) {
+    pollTimer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/build/${jobId}/status`);
+        const data = await res.json();
+        if (!res.ok) { clearInterval(pollTimer); return; }
+
+        stageText.textContent = data.stage || '…';
+        progressFill.style.width = (data.progress || 0) + '%';
+        progressPct.textContent = (data.progress || 0) + '%';
+        logBox.textContent = (data.log || []).join('\n');
+
+        if (data.status === 'success') {
+          clearInterval(pollTimer);
+          progressRunning.style.display = 'none';
+          progressDone.style.display = 'block';
+          resultIcon.textContent = '✅';
+          resultTitle.textContent = 'Build complete';
+          resultSub.textContent = `${data.apk_name} is ready to download.`;
+          downloadBtn.href = `/api/build/${jobId}/download`;
+          downloadBtn.style.display = 'inline-flex';
+        } else if (data.status === 'error') {
+          clearInterval(pollTimer);
+          progressRunning.style.display = 'none';
+          progressDone.style.display = 'block';
+          resultIcon.textContent = '⚠️';
+          resultTitle.textContent = 'Build failed';
+          resultSub.textContent = data.error || 'Something went wrong during the build. Check the log below.';
+          downloadBtn.style.display = 'none';
+          logBox.style.display = 'block';
+        }
+      } catch (err) {
+        // transient network hiccup — keep polling
+      }
+    }, 1200);
+  }
+</script>
+
+</body>
+</html>

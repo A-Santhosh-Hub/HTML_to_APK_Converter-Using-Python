@@ -1,0 +1,20 @@
+2026-07-01 21:47:52,881 [INFO] === STEP 1: Analyzing HTML file ===
+2026-07-01 21:47:52,893 [INFO] Detected features:
+2026-07-01 21:47:52,893 [INFO]    internet               no
+2026-07-01 21:47:52,893 [INFO]    images                 no
+2026-07-01 21:47:52,893 [INFO]    iframe                 no
+2026-07-01 21:47:52,893 [INFO]    external_links         no
+2026-07-01 21:47:52,893 [INFO]    local_storage          YES
+2026-07-01 21:47:52,893 [INFO]    drag_drop              YES
+2026-07-01 21:47:52,905 [INFO]    file_chooser           YES
+2026-07-01 21:47:52,905 [INFO]    file_download          no
+2026-07-01 21:47:52,907 [INFO]    live_preview           no
+2026-07-01 21:47:52,907 [INFO]    media                  no
+2026-07-01 21:47:52,907 [INFO]    dark_mode              YES
+2026-07-01 21:47:52,907 [INFO]    clipboard              no
+2026-07-01 21:47:52,907 [INFO] === STEP 2: Collecting local assets ===
+2026-07-01 21:47:52,907 [INFO]    [Phase 1] Scanning input_project/ for all web asset files...
+2026-07-01 21:47:52,907 [INFO]    [Phase 2] Processing HTML-detected local asset paths...
+2026-07-01 21:47:52,907 [INFO]    [Phase 3] Deep-scanning CSS files for url() references...
+2026-07-01 21:47:52,907 [INFO]    [Phase 4] Deep-scanning JS files for fetch/import paths...
+2026-07-01 21:47:52,907 [INFO]    Total local assets: 0 file(s)
